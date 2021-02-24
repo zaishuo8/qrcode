@@ -26,10 +26,12 @@ let qrWidth = 80;
 // 背景图宽度
 const bgWidth = 400;
 
-// 存放 qr 文字 map <index, text>
-const qrTextMap: any = {};
-
 let timeoutId = 0;
+
+function getDescList(desc: string) {
+  if (!desc) return [];
+  return desc.split('\n');
+}
 
 function App() {
 
@@ -38,8 +40,7 @@ function App() {
   const [ bgBase64, setBgBase64 ] = useState<string>('');
   const [ showText, setShowText ] = useState(false);
   const [ textColor, setTextColor ] = useState('black');
-
-  const forceUpdate = useForceUpdate();
+  const [ desc, setDesc ] = useState('');  // 文字，用换行符分开
 
   const getTextUrls = () => {
     if (!text) return [];
@@ -141,12 +142,11 @@ function App() {
     }
   };
 
-  const onTextChange = (value: string, index: number) => {
+  const onTextChange = (value: string) => {
     clearTimeout(timeoutId);
     // @ts-ignore
     timeoutId = setTimeout(() => {
-      qrTextMap[index] = value;
-      forceUpdate();
+      setDesc(value);
     }, 500);
   };
 
@@ -155,6 +155,8 @@ function App() {
       mouseDown = false;
     });
   }, []);
+
+  const descArr = getDescList(desc);
 
   return (
     <ConfigProvider locale={zhCN}>
@@ -191,7 +193,7 @@ function App() {
               <span>调整二维码大小</span>
               <Slider
                 min={60}
-                max={200}
+                max={1000}
                 defaultValue={qrWidth}
                 onAfterChange={(value: number) => {
                   qrWidth = value;
@@ -202,12 +204,23 @@ function App() {
           )}
           {bgBase64 && (
             <div style={{marginTop: 40}}>
-              <Button
-                onClick={() => setShowText(true)}
-                style={{width: 100}}
-              >添加文字</Button>
+              {!showText && (
+                <Button
+                  onClick={() => setShowText(true)}
+                  style={{width: 100}}
+                >添加文字</Button>
+              )}
               {showText && (
                 <>
+                  <TextArea
+                    style={{
+                      marginTop: 10,
+                      width: bgWidth,
+                      height: 120,
+                    }}
+                    placeholder={text}
+                    onChange={(e) => onTextChange(e.target.value)}
+                  />
                   <p style={{marginTop: 10}}>文字颜色</p>
                   <div style={{display: "flex"}}>
                     {['black', 'blue', 'orange', 'red'].map((item, index) => (
@@ -278,18 +291,7 @@ function App() {
                   onMouseDown={e => onMouseDown(e, 'text')}
                   // @ts-ignore
                   onMouseMove={(e) => qrMove(e, 'text')}
-                >{qrTextMap[index] || ''}</span>
-                {showText && bgBase64 && (
-                  <TextArea
-                    style={{
-                      marginTop: 20,
-                      width: bgWidth,
-                      height: 120,
-                    }}
-                    placeholder={text}
-                    onChange={(e) => onTextChange(e.target.value, index)}
-                  />
-                )}
+                >{descArr[index] || ''}</span>
               </div>
             )
           })}
